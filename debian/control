@@ -1,0 +1,66 @@
+Source: python-ironic-inspector-client
+Section: python
+Priority: optional
+Maintainer: PKG OpenStack <openstack-devel@lists.alioth.debian.org>
+Uploaders: Thomas Goirand <zigo@debian.org>,
+Build-Depends: debhelper (>= 9),
+               dh-python,
+               python-all,
+               python-pbr (>= 1.8),
+               python-setuptools,
+               python3-all,
+               python3-pbr (>= 1.8),
+               python3-setuptools,
+Build-Depends-Indep:
+Standards-Version: 3.9.6
+Vcs-Browser: http://anonscm.debian.org/gitweb/?p=openstack/python-ironic-inspector-client.git
+Vcs-Git: git://anonscm.debian.org/openstack/python-ironic-inspector-client.git
+Homepage: https://launchpad.net/python-ironic-inspector-client
+
+Package: python-ironic-inspector-client
+Architecture: all
+Depends: python-cliff (>= 1.14.0),
+         python-openstackclient (>= 1.5.0),
+         python-oslo.i18n (>= 1.5.0),
+         python-oslo.utils (>= 2.0.0),
+         python-pbr (>= 1.8),
+         python-requests (>= 2.5.2),
+         python-six (>= 1.9.0),
+         ${misc:Depends},
+         ${python:Depends},
+Description: client for Ironic Inspector - Python 2.7
+ This is an auxiliary service for discovering hardware properties for a node
+ managed by OpenStack Ironic. Hardware introspection or hardware properties
+ discovery is a process of getting hardware parameters required for scheduling
+ from a bare metal node, given it's power management credentials (e.g. IPMI
+ address, user name and password).
+ .
+ A special discovery ramdisk is required to collect the information on a node.
+ The default one can be built using diskimage-builder and
+ ironic-inspector-ramdisk element.
+ .
+ This package contains the Python 2.7 module.
+
+Package: python3-ironic-inspector-client
+Architecture: all
+Depends: python3-cliff (>= 1.14.0),
+         python3-openstackclient (>= 1.5.0),
+         python3-oslo.i18n (>= 1.5.0),
+         python3-oslo.utils (>= 2.0.0),
+         python3-pbr (>= 1.8),
+         python3-requests (>= 2.5.2),
+         python3-six (>= 1.9.0),
+         ${misc:Depends},
+         ${python3:Depends},
+Description: client for Ironic Inspector - Python 3.x
+ This is an auxiliary service for discovering hardware properties for a node
+ managed by OpenStack Ironic. Hardware introspection or hardware properties
+ discovery is a process of getting hardware parameters required for scheduling
+ from a bare metal node, given it's power management credentials (e.g. IPMI
+ address, user name and password).
+ .
+ A special discovery ramdisk is required to collect the information on a node.
+ The default one can be built using diskimage-builder and
+ ironic-inspector-ramdisk element.
+ .
+ This package contains the Python 3.x module.

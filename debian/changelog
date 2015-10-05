@@ -1,0 +1,5 @@
+python-ironic-inspector-client (1.2.0-1) unstable; urgency=medium
+
+  * Initial release (Closes: #800962).
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 05 Oct 2015 11:23:19 +0200
