@@ -29,7 +29,7 @@ ifeq (,$(findstring nocheck, $(DEB_BUILD_OPTIONS)))
 		PYMAJOR=`echo $$i | cut -d'.' -f1` ; \
 		echo "===> Testing with python$$i (python$$PYMAJOR)" ; \
 		TEMP_REZ=`mktemp -t` ; \
-		PYTHONPATH=$(CURDIR) PYTHON=python$$i python$$i-coverage run --branch --include "ironic_inspector_client*" -m unittest discover ironic_inspector_client.test
+		PYTHONPATH=$(CURDIR) PYTHON=python$$i python$$i-coverage run --branch --include "ironic_inspector_client*" -m unittest discover ironic_inspector_client.test ; \
 	done
 endif
 
