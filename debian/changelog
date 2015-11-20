@@ -1,3 +1,9 @@
+python-ironic-inspector-client (1.2.0-2) unstable; urgency=medium
+
+  * Fixed missing build-depends-indep.
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 20 Nov 2015 22:22:21 +0100
+
 python-ironic-inspector-client (1.2.0-1) unstable; urgency=medium
 
   * Initial release (Closes: #800962).
