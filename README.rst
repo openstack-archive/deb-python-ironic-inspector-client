@@ -78,7 +78,9 @@ Start introspection on a node
 
 CLI::
 
-    $ openstack baremetal introspection start UUID [--new-ipmi-password=PWD [--new-ipmi-username=USER]]
+    $ openstack baremetal introspection start [--new-ipmi-password=PWD [--new-ipmi-username=USER]] UUID [UUID ...]
+
+Note that the CLI call accepts several UUID's and will stop on the first error.
 
 Query introspection status
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -95,6 +97,20 @@ Returns a dict with keys:
 CLI::
 
     $ openstack baremetal introspection status UUID
+
+Retrieving introspection data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``client.get_data(uuid[, raw])``
+
+* ``uuid`` - Ironic node UUID;
+* ``raw`` - whether to return raw data or parsed JSON data (the default).
+
+This call is not exposed in CLI yet.
+
+.. note::
+    This feature requires Swift support to be enabled in **Ironic Inspector**
+    by setting ``[processing]store_data`` configuration option to ``swift``.
 
 Introspection Rules API
 ~~~~~~~~~~~~~~~~~~~~~~~
