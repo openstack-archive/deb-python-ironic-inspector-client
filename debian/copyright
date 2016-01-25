@@ -2,16 +2,16 @@ Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: python-ironic-inspector-client
 Source: https://github.com/openstack/python-ironic-inspector-client
 
-Files: debian/*
-Copyright: (c) 2015, Thomas Goirand <zigo@debian.org>
-License: Apache-2
-
 Files: *
 Copyright: (c) 2015, Red Hat Inc.
            (c) 2015, NEC
            (c) 2015, IBM
            (c) 2015, HP
            (c) 2015, OpenStack Foundation <openstack-dev@lists.openstack.org>
+License: Apache-2
+
+Files: debian/*
+Copyright: (c) 2015-2016, Thomas Goirand <zigo@debian.org>
 License: Apache-2
 
 License: Apache-2
