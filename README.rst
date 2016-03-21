@@ -17,13 +17,16 @@ Python API
 To use Python API first create a ``ClientV1`` object::
 
     import ironic_inspector_client
+    client = ironic_inspector_client.ClientV1(session=keystone_session)
 
-    url = 'http://HOST:5050'
-    client = ironic_inspector_client.ClientV1(auth_token=token, inspector_url=url)
+This code creates a client with API version *1.0* and a given Keystone session.
+The service URL is fetched from the service catalog in this case. Optional
+arguments ``service_type``, ``interface`` and ``region_name`` can be provided
+to modify how the URL is looked up.
 
-This code creates a client with API version *1.0* and an authentication token.
-If ``inspector_url`` is missing, local host is assumed for now. Service
-catalog will be used in the future.
+If the catalog lookup fails, the local host with port 5050 is tried. However,
+this behaviour is deprecated and should not be relied on.
+Also an explicit ``inspector_url`` can be passed to bypass service catalog.
 
 Optional ``api_version`` argument is a minimum API version that a server must
 support. It can be a tuple (MAJ, MIN), string "MAJ.MIN" or integer
@@ -56,7 +59,8 @@ CLI tool is based on OpenStackClient_ with prefix
 ``openstack baremetal introspection``. Accepts optional argument
 ``--inspector-url`` with the **Ironic Inspector** API endpoint.
 
-Refer to HTTP-API.rst_ for information on the **Ironic Inspector** HTTP API.
+Refer to the `HTTP API reference`_ for information on the
+**Ironic Inspector** HTTP API.
 
 Detect server API versions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -78,9 +82,18 @@ Start introspection on a node
 
 CLI::
 
-    $ openstack baremetal introspection start [--new-ipmi-password=PWD [--new-ipmi-username=USER]] UUID [UUID ...]
+    $ openstack baremetal introspection start [--wait] [--new-ipmi-password=PWD [--new-ipmi-username=USER]] UUID [UUID ...]
 
 Note that the CLI call accepts several UUID's and will stop on the first error.
+
+.. note::
+    This CLI call doesn't rely on Ironic, and the introspected node will be left in
+    ``MANAGEABLE`` state. This means that the Ironic node is not protected from other
+    operations being performed by Ironic, which could cause inconsistency in the
+    node's state, and lead to operational errors.
+
+With ``--wait`` flag it waits until introspection ends for all given nodes,
+then displays the results as a table.
 
 Query introspection status
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -106,11 +119,26 @@ Retrieving introspection data
 * ``uuid`` - Ironic node UUID;
 * ``raw`` - whether to return raw data or parsed JSON data (the default).
 
-This call is not exposed in CLI yet.
+CLI::
+
+    $ openstack baremetal introspection data save [--file=file_name] UUID
+
+If file name is not provided, the data is dumped to stdout.
 
 .. note::
     This feature requires Swift support to be enabled in **Ironic Inspector**
     by setting ``[processing]store_data`` configuration option to ``swift``.
+
+Aborting introspection
+~~~~~~~~~~~~~~~~~~~~~~
+
+``client.abort(uuid)``
+
+* ``uuid`` - Ironic node UUID.
+
+CLI::
+
+  $ openstack baremetal introspection abort UUID
 
 Introspection Rules API
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -192,24 +220,26 @@ functionality:
 
 * Starting introspection::
 
-    ironic_inspector_client.introspect(uuid[, new_ipmi_password[, new_ipmi_username]][, auth_token][, base_url][, api_version])
+    ironic_inspector_client.introspect(uuid[, new_ipmi_password[, new_ipmi_username]][, base_url][, api_version] **)
 
 * Getting introspection status::
 
-    ironic_inspector_client.get_status(uuid[, auth_token][, base_url][, api_version])
+    ironic_inspector_client.get_status(uuid[, base_url][, api_version] **)
 
 * Getting API versions supported by a server::
 
-    ironic_inspector_client.server_api_versions([base_url])
+    ironic_inspector_client.server_api_versions([base_url] **)
 
-Here ``base_url`` argument is the same as ``inspector_url`` argument to
-``ClientV1`` constructor.
+Here ``base_url`` argument is the same as ``inspector_url`` argument
+to the ``ClientV1`` constructor. Keyword arguments are passed to the client
+constructor intact. The first 2 functions also accept deprecated ``auth_token``
+argument, which should not be used.
 
 
 .. _Gerrit Workflow: http://docs.openstack.org/infra/manual/developers.html#development-workflow
 .. _Ironic Inspector: https://pypi.python.org/pypi/ironic-inspector
-.. _Inspector contributing guide: https://github.com/openstack/ironic-inspector/blob/master/CONTRIBUTING.rst
+.. _Inspector contributing guide: http://docs.openstack.org/developer/ironic-inspector/contributing.html
 .. _OpenStackClient: http://docs.openstack.org/developer/python-openstackclient/
-.. _Setting IPMI Credentials: https://github.com/openstack/ironic-inspector#setting-ipmi-credentials
-.. _HTTP-API.rst: https://github.com/openstack/ironic-inspector/blob/master/HTTP-API.rst
-.. _introspection rules documentation: https://github.com/openstack/ironic-inspector#introspection-rules
+.. _Setting IPMI Credentials: http://docs.openstack.org/developer/ironic-inspector/usage.html#setting-ipmi-credentials
+.. _HTTP API reference: http://docs.openstack.org/developer/ironic-inspector/http-api.html
+.. _introspection rules documentation: http://docs.openstack.org/developer/ironic-inspector/usage.html#introspection-rules

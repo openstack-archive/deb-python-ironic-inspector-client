@@ -17,6 +17,7 @@ from __future__ import print_function
 
 import json
 import logging
+import sys
 
 from cliff import command
 from cliff import lister
@@ -41,8 +42,10 @@ for mversion in range(ironic_inspector_client.MAX_API_VERSION[1] + 1):
 def make_client(instance):
     return ironic_inspector_client.ClientV1(
         inspector_url=instance.get_configuration().get('inspector_url'),
-        auth_token=instance.auth_ref.auth_token,
-        api_version=instance._api_version[API_NAME])
+        session=instance.session,
+        api_version=instance._api_version[API_NAME],
+        interface=instance._interface,
+        region_name=instance._region_name)
 
 
 def build_option_parser(parser):
@@ -58,8 +61,10 @@ def build_option_parser(parser):
     return parser
 
 
-class StartCommand(command.Command):
+class StartCommand(lister.Lister):
     """Start the introspection."""
+
+    COLUMNS = ('UUID', 'Error')
 
     def get_parser(self, prog_name):
         parser = super(StartCommand, self).get_parser(prog_name)
@@ -72,6 +77,10 @@ class StartCommand(command.Command):
                             default=None,
                             help='if set, *Ironic Inspector* will update IPMI '
                             'password to this value')
+        parser.add_argument('--wait',
+                            action='store_true',
+                            help='wait for introspection to finish; the result'
+                            ' will be displayed in the end')
         return parser
 
     def take_action(self, parsed_args):
@@ -82,7 +91,17 @@ class StartCommand(command.Command):
                               new_ipmi_password=parsed_args.new_ipmi_password)
         if parsed_args.new_ipmi_password:
             print('Setting IPMI credentials requested, please power on '
-                  'the machine manually')
+                  'the machine manually', file=sys.stderr)
+
+        if parsed_args.wait:
+            print('Waiting for introspection to finish...', file=sys.stderr)
+            result = client.wait_for_finish(parsed_args.uuid)
+            result = [(uuid, s.get('error'))
+                      for uuid, s in result.items()]
+        else:
+            result = []
+
+        return self.COLUMNS, result
 
 
 class StatusCommand(show.ShowOne):
@@ -97,6 +116,19 @@ class StatusCommand(show.ShowOne):
         client = self.app.client_manager.baremetal_introspection
         status = client.get_status(parsed_args.uuid)
         return zip(*sorted(status.items()))
+
+
+class AbortCommand(command.Command):
+    """Abort running introspection for node."""
+
+    def get_parser(self, prog_name):
+        parser = super(AbortCommand, self).get_parser(prog_name)
+        parser.add_argument('uuid', help='baremetal node UUID')
+        return parser
+
+    def take_action(self, parsed_args):
+        client = self.app.client_manager.baremetal_introspection
+        client.abort(parsed_args.uuid)
 
 
 class RuleImportCommand(command.Command):
@@ -165,3 +197,25 @@ class RulePurgeCommand(command.Command):
     def take_action(self, parsed_args):
         client = self.app.client_manager.baremetal_introspection
         client.rules.delete_all()
+
+
+class DataSaveCommand(command.Command):
+    """Save or display raw introspection data."""
+
+    def get_parser(self, prog_name):
+        parser = super(DataSaveCommand, self).get_parser(prog_name)
+        parser.add_argument("--file", metavar="<filename>",
+                            help="downloaded introspection data filename "
+                            "(default: stdout)")
+        parser.add_argument('uuid', help='baremetal node UUID')
+        return parser
+
+    def take_action(self, parsed_args):
+        client = self.app.client_manager.baremetal_introspection
+        data = client.get_data(parsed_args.uuid,
+                               raw=bool(parsed_args.file))
+        if parsed_args.file:
+            with open(parsed_args.file, 'wb') as fp:
+                fp.write(data)
+        else:
+            json.dump(data, sys.stdout)

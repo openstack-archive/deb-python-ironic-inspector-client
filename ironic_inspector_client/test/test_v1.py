@@ -13,12 +13,14 @@
 
 import unittest
 
+from keystoneclient import session
 import mock
 from oslo_utils import netutils
 from oslo_utils import uuidutils
 
 import ironic_inspector_client
 from ironic_inspector_client.common import http
+from ironic_inspector_client import v1
 
 
 FAKE_HEADERS = {
@@ -27,7 +29,7 @@ FAKE_HEADERS = {
 }
 
 
-@mock.patch.object(http.requests, 'get',
+@mock.patch.object(session.Session, 'get',
                    return_value=mock.Mock(headers=FAKE_HEADERS,
                                           status_code=200))
 class TestInit(unittest.TestCase):
@@ -40,7 +42,8 @@ class TestInit(unittest.TestCase):
 
     def test_ok(self, mock_get):
         self.get_client()
-        mock_get.assert_called_once_with(self.my_ip)
+        mock_get.assert_called_once_with(self.my_ip, authenticated=False,
+                                         raise_exc=False)
 
     def test_explicit_version(self, mock_get):
         self.get_client(api_version=(1, 2))
@@ -57,7 +60,9 @@ class TestInit(unittest.TestCase):
 
     def test_explicit_url(self, mock_get):
         self.get_client(inspector_url='http://host:port')
-        mock_get.assert_called_once_with('http://host:port')
+        mock_get.assert_called_once_with('http://host:port',
+                                         authenticated=False,
+                                         raise_exc=False)
 
 
 class BaseTest(unittest.TestCase):
@@ -108,6 +113,59 @@ class TestGetStatus(BaseTest):
 
     def test_invalid_input(self, _):
         self.assertRaises(TypeError, self.get_client().get_status, 42)
+
+
+@mock.patch.object(ironic_inspector_client.ClientV1, 'get_status',
+                   autospec=True)
+class TestWaitForFinish(BaseTest):
+    def setUp(self):
+        super(TestWaitForFinish, self).setUp()
+        self.sleep = mock.Mock(spec=[])
+
+    def test_ok(self, mock_get_st):
+        mock_get_st.side_effect = (
+            [{'finished': False, 'error': None}] * 5
+            + [{'finished': True, 'error': None}]
+        )
+
+        res = self.get_client().wait_for_finish(['uuid1'],
+                                                sleep_function=self.sleep)
+        self.assertEqual({'uuid1': {'finished': True, 'error': None}},
+                         res)
+        self.sleep.assert_called_with(v1.DEFAULT_RETRY_INTERVAL)
+        self.assertEqual(5, self.sleep.call_count)
+
+    def test_timeout(self, mock_get_st):
+        mock_get_st.return_value = {'finished': False, 'error': None}
+
+        self.assertRaises(v1.WaitTimeoutError,
+                          self.get_client().wait_for_finish,
+                          ['uuid1'], sleep_function=self.sleep)
+        self.sleep.assert_called_with(v1.DEFAULT_RETRY_INTERVAL)
+        self.assertEqual(v1.DEFAULT_MAX_RETRIES, self.sleep.call_count)
+
+    def test_multiple(self, mock_get_st):
+        mock_get_st.side_effect = [
+            # attempt 1
+            {'finished': False, 'error': None},
+            {'finished': False, 'error': None},
+            {'finished': False, 'error': None},
+            # attempt 2
+            {'finished': True, 'error': None},
+            {'finished': False, 'error': None},
+            {'finished': True, 'error': 'boom'},
+            # attempt 3 (only uuid2)
+            {'finished': True, 'error': None},
+        ]
+
+        res = self.get_client().wait_for_finish(['uuid1', 'uuid2', 'uuid3'],
+                                                sleep_function=self.sleep)
+        self.assertEqual({'uuid1': {'finished': True, 'error': None},
+                          'uuid2': {'finished': True, 'error': None},
+                          'uuid3': {'finished': True, 'error': 'boom'}},
+                         res)
+        self.sleep.assert_called_with(v1.DEFAULT_RETRY_INTERVAL)
+        self.assertEqual(2, self.sleep.call_count)
 
 
 @mock.patch.object(http.BaseClient, 'request')
@@ -206,3 +264,14 @@ class TestRules(BaseTest):
         self.get_rules().delete_all()
 
         mock_req.assert_called_once_with('delete', '/rules')
+
+
+@mock.patch.object(http.BaseClient, 'request')
+class TestAbort(BaseTest):
+    def test(self, mock_req):
+        self.get_client().abort(self.uuid)
+        mock_req.assert_called_once_with('post',
+                                         '/introspection/%s/abort' % self.uuid)
+
+    def test_invalid_input(self, _):
+        self.assertRaises(TypeError, self.get_client().abort, 42)

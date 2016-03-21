@@ -11,8 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import sys
+
 import mock
 from openstackclient.tests import utils
+import six
 import tempfile
 
 from ironic_inspector_client import shell
@@ -35,8 +38,9 @@ class TestIntrospect(BaseTest):
 
         cmd = shell.StartCommand(self.app, None)
         parsed_args = self.check_parser(cmd, arglist, verifylist)
-        cmd.take_action(parsed_args)
+        result = cmd.take_action(parsed_args)
 
+        self.assertEqual((shell.StartCommand.COLUMNS, []), result)
         self.client.introspect.assert_called_once_with('uuid1',
                                                        new_ipmi_password=None,
                                                        new_ipmi_username=None)
@@ -99,6 +103,57 @@ class TestIntrospect(BaseTest):
                            new_ipmi_username='root')
                  for uuid in uuids]
         self.assertEqual(calls, self.client.introspect.call_args_list)
+
+    def test_wait(self):
+        nodes = ['uuid1', 'uuid2', 'uuid3']
+        arglist = ['--wait'] + nodes
+        verifylist = [('uuid', nodes), ('wait', True)]
+        self.client.wait_for_finish.return_value = {
+            'uuid1': {'finished': True, 'error': None},
+            'uuid2': {'finished': True, 'error': 'boom'},
+            'uuid3': {'finished': True, 'error': None},
+        }
+
+        cmd = shell.StartCommand(self.app, None)
+        parsed_args = self.check_parser(cmd, arglist, verifylist)
+        _c, values = cmd.take_action(parsed_args)
+
+        calls = [mock.call(uuid, new_ipmi_password=None,
+                           new_ipmi_username=None)
+                 for uuid in nodes]
+        self.assertEqual(calls, self.client.introspect.call_args_list)
+        self.assertEqual([('uuid1', None), ('uuid2', 'boom'), ('uuid3', None)],
+                         sorted(values))
+
+    def test_abort(self):
+        node = 'uuid1'
+        arglist = [node]
+        verifylist = [('uuid', node)]
+        response_mock = mock.Mock(status_code=202, content=b'')
+        self.client.abort.return_value = response_mock
+
+        cmd = shell.AbortCommand(self.app, None)
+
+        parsed_args = self.check_parser(cmd, arglist, verifylist)
+        result = cmd.take_action(parsed_args)
+
+        self.client.abort.assert_called_once_with(node)
+        self.assertIs(None, result)
+
+
+class TestGetStatus(BaseTest):
+    def test_get_status(self):
+        arglist = ['uuid1']
+        verifylist = [('uuid', 'uuid1')]
+        self.client.get_status.return_value = {'finished': True,
+                                               'error': 'boom'}
+
+        cmd = shell.StatusCommand(self.app, None)
+        parsed_args = self.check_parser(cmd, arglist, verifylist)
+        result = cmd.take_action(parsed_args)
+
+        self.assertEqual([('error', 'finished'), ('boom', True)], list(result))
+        self.client.get_status.assert_called_once_with('uuid1')
 
 
 class TestRules(BaseTest):
@@ -183,3 +238,35 @@ class TestRules(BaseTest):
         cmd.take_action(parsed_args)
 
         self.rules_api.delete_all.assert_called_once_with()
+
+
+class TestDataSave(BaseTest):
+    def test_stdout(self):
+        self.client.get_data.return_value = {'answer': 42}
+        buf = six.StringIO()
+
+        arglist = ['uuid1']
+        verifylist = [('uuid', 'uuid1')]
+
+        cmd = shell.DataSaveCommand(self.app, None)
+        parsed_args = self.check_parser(cmd, arglist, verifylist)
+        with mock.patch.object(sys, 'stdout', buf):
+            cmd.take_action(parsed_args)
+        self.assertEqual('{"answer": 42}', buf.getvalue())
+        self.client.get_data.assert_called_once_with('uuid1', raw=False)
+
+    def test_file(self):
+        self.client.get_data.return_value = b'{"answer": 42}'
+
+        with tempfile.NamedTemporaryFile() as fp:
+            arglist = ['--file', fp.name, 'uuid1']
+            verifylist = [('uuid', 'uuid1'), ('file', fp.name)]
+
+            cmd = shell.DataSaveCommand(self.app, None)
+            parsed_args = self.check_parser(cmd, arglist, verifylist)
+            cmd.take_action(parsed_args)
+
+            content = fp.read()
+
+        self.assertEqual(b'{"answer": 42}', content)
+        self.client.get_data.assert_called_once_with('uuid1', raw=True)
