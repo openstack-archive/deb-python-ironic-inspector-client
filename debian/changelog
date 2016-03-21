@@ -5,6 +5,7 @@ python-ironic-inspector-client (1.5.0-1) experimental; urgency=medium
 
   [ Thomas Goirand ]
   * New upstream release.
+  * Fixed (build-)depends for this release.
 
  -- Thomas Goirand <zigo@debian.org>  Mon, 21 Mar 2016 12:08:12 +0100
 
