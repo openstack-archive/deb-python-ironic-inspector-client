@@ -1,3 +1,9 @@
+python-ironic-inspector-client (1.5.0-2) unstable; urgency=medium
+
+  * Uploading to unstable.
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 04 Apr 2016 16:57:26 +0000
+
 python-ironic-inspector-client (1.5.0-1) experimental; urgency=medium
 
   [ Ondřej Nový ]
