@@ -1,9 +1,13 @@
-python-ironic-inspector-client (1.5.0-3) UNRELEASED; urgency=medium
+python-ironic-inspector-client (1.7.0-1) UNRELEASED; urgency=medium
 
+  [ Ondřej Nový ]
   * Standards-Version is 3.9.8 now (no change)
   * d/rules: Removed UPSTREAM_GIT with default value
 
- -- Ondřej Nový <novy@ondrej.org>  Sat, 09 Apr 2016 19:27:21 +0200
+  [ Corey Bryant ]
+  * New upstream release.
+
+ -- Corey Bryant <corey.bryant@canonical.com>  Tue, 31 May 2016 14:11:43 -0400
 
 python-ironic-inspector-client (1.5.0-2) unstable; urgency=medium
 
