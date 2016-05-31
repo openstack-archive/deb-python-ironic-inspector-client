@@ -7,6 +7,7 @@ python-ironic-inspector-client (1.7.0-1) UNRELEASED; urgency=medium
   [ Corey Bryant ]
   * New upstream release.
   * d/gbp.conf: Update branch for Newton.
+  * d/control: Align (Build-)Depends with upstream.
 
  -- Corey Bryant <corey.bryant@canonical.com>  Tue, 31 May 2016 14:11:43 -0400
 
