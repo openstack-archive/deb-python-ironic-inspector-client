@@ -140,6 +140,21 @@ CLI::
 
   $ openstack baremetal introspection abort UUID
 
+Reprocess stored introspection data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``client.reprocess(uuid)``
+
+* ``uuid`` - Ironic node UUID.
+
+CLI::
+
+    $ openstack baremetal introspection reprocess UUID
+
+.. note::
+   This feature requires Swift store to be enabled for **Ironic Inspector**
+   by setting ``[processing]store_data`` configuration option to ``swift``.
+
 Introspection Rules API
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -234,6 +249,13 @@ Here ``base_url`` argument is the same as ``inspector_url`` argument
 to the ``ClientV1`` constructor. Keyword arguments are passed to the client
 constructor intact. The first 2 functions also accept deprecated ``auth_token``
 argument, which should not be used.
+
+Using names instead of UUID
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Starting with baremetal introspection API 1.5 (provided by **Ironic Inspector**
+3.3.0) it's possible to use node names instead of UUIDs in all Python and CLI
+calls.
 
 
 .. _Gerrit Workflow: http://docs.openstack.org/infra/manual/developers.html#development-workflow
