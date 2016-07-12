@@ -1,4 +1,4 @@
-python-ironic-inspector-client (1.7.0-1) UNRELEASED; urgency=medium
+python-ironic-inspector-client (1.7.0-1) experimental; urgency=medium
 
   [ Ondřej Nový ]
   * Standards-Version is 3.9.8 now (no change)
@@ -9,7 +9,10 @@ python-ironic-inspector-client (1.7.0-1) UNRELEASED; urgency=medium
   * d/gbp.conf: Update branch for Newton.
   * d/control: Align (Build-)Depends with upstream.
 
- -- Corey Bryant <corey.bryant@canonical.com>  Tue, 31 May 2016 14:11:43 -0400
+  [ Thomas Goirand ]
+  * Using pkgos-dh_auto_install from openstack-pkg-tools >= 52~.
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 12 Jul 2016 18:46:48 +0000
 
 python-ironic-inspector-client (1.5.0-2) unstable; urgency=medium
 
