@@ -1,0 +1,10 @@
+Code-Review+1: Kyrylo Romanenko <kromanenko@mirantis.com>
+Code-Review+2: Dmitry Tantsur <divius.inside@gmail.com>
+Code-Review+2: Sam Betts <sam@code-smash.net>
+Workflow+1: Sam Betts <sam@code-smash.net>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Mon, 11 Jul 2016 11:29:52 +0000
+Reviewed-on: https://review.openstack.org/337294
+Project: openstack/deb-python-ironic-inspector-client
+Branch: refs/heads/master

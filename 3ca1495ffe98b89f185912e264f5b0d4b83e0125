@@ -1,0 +1,11 @@
+Code-Review+2: Dmitry Tantsur <divius.inside@gmail.com>
+Code-Review+2: Yuiko Takada Mori <y-mori@ti.jp.nec.com>
+Workflow+1: Yuiko Takada Mori <y-mori@ti.jp.nec.com>
+Code-Review+2: Anton Arefiev <aarefiev@mirantis.com>
+Workflow+1: Anton Arefiev <aarefiev@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Fri, 01 Jul 2016 09:06:20 +0000
+Reviewed-on: https://review.openstack.org/336228
+Project: openstack/deb-python-ironic-inspector-client
+Branch: refs/heads/master
