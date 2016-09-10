@@ -1,0 +1,9 @@
+Code-Review+2: Sam Betts <sam@code-smash.net>
+Code-Review+2: Dmitry Tantsur <divius.inside@gmail.com>
+Workflow+1: Dmitry Tantsur <divius.inside@gmail.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Wed, 14 Oct 2015 09:40:03 +0000
+Reviewed-on: https://review.openstack.org/234094
+Project: openstack/deb-python-ironic-inspector-client
+Branch: refs/heads/stable/liberty
