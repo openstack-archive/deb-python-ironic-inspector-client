@@ -1,0 +1,8 @@
+Code-Review+2: Dmitry Tantsur <divius.inside@gmail.com>
+Workflow+1: Dmitry Tantsur <divius.inside@gmail.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Sun, 15 May 2016 21:39:01 +0000
+Reviewed-on: https://review.openstack.org/316479
+Project: openstack/deb-python-ironic-inspector-client
+Branch: refs/heads/stable/mitaka
