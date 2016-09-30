@@ -1,0 +1,9 @@
+Code-Review+2: Anton Arefiev <aarefiev@mirantis.com>
+Code-Review+2: Dmitry Tantsur <divius.inside@gmail.com>
+Workflow+1: Dmitry Tantsur <divius.inside@gmail.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Fri, 30 Sep 2016 10:48:45 +0000
+Reviewed-on: https://review.openstack.org/378886
+Project: openstack/deb-python-ironic-inspector-client
+Branch: refs/heads/master
