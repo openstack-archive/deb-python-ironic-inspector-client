@@ -16,11 +16,14 @@ eventlet.monkey_patch()
 
 import json
 import mock
-import requests
+import os
+import sys
+import tempfile
 import unittest
 
 from ironic_inspector.common import swift
 from ironic_inspector.test import functional
+from oslo_concurrency import processutils
 
 import ironic_inspector_client as client
 
@@ -47,6 +50,31 @@ class TestV1PythonAPI(functional.Base):
         self.assertCalledWithPatch(self.patch, self.cli.node.update)
         self.cli.port.create.assert_called_once_with(
             node_uuid=self.uuid, address='11:22:33:44:55:66')
+
+        status = self.client.get_status(self.uuid)
+        self.assertEqual({'finished': True, 'error': None}, status)
+
+    def test_wait_for_finish(self):
+        shared = [0]  # mutable structure to hold number of retries
+
+        def fake_waiter(delay):
+            shared[0] += 1
+            if shared[0] == 2:
+                # On the second wait simulate data arriving
+                res = self.call_continue(self.data)
+                self.assertEqual({'uuid': self.uuid}, res)
+            elif shared[0] > 2:
+                # Just wait afterwards
+                eventlet.greenthread.sleep(delay)
+
+        self.client.introspect(self.uuid)
+        eventlet.greenthread.sleep(functional.DEFAULT_SLEEP)
+
+        status = self.client.get_status(self.uuid)
+        self.assertEqual({'finished': False, 'error': None}, status)
+
+        self.client.wait_for_finish([self.uuid], sleep_function=fake_waiter,
+                                    retry_interval=functional.DEFAULT_SLEEP)
 
         status = self.client.get_status(self.uuid)
         self.assertEqual({'finished': True, 'error': None}, status)
@@ -122,7 +150,7 @@ class TestV1PythonAPI(functional.Base):
                           'operator'}, status)
 
         # assert continue doesn't work after abort
-        self.assertRaises(requests.HTTPError, self.call_continue, self.data)
+        self.call_continue(self.data, expect_error=400)
 
     def test_setup_ipmi(self):
         self.node.provision_state = 'enroll'
@@ -247,6 +275,110 @@ class TestSimplePythonAPI(functional.Base):
                           client.get_status, self.uuid, api_version=(1, 0))
 
 
+BASE_CMD = [os.path.join(sys.prefix, 'bin', 'openstack'),
+            '--os-auth-type', 'token_endpoint', '--os-token', 'fake',
+            '--os-url', 'http://127.0.0.1:5050']
+
+
+class BaseCLITest(functional.Base):
+    def openstack(self, cmd, expect_error=False, parse_json=False):
+        real_cmd = BASE_CMD + cmd
+        if parse_json:
+            real_cmd += ['-f', 'json']
+        try:
+            out, _err = processutils.execute(*real_cmd)
+        except processutils.ProcessExecutionError as exc:
+            if expect_error:
+                return exc.stderr
+            else:
+                raise
+        else:
+            if expect_error:
+                raise AssertionError('Command %s returned unexpected success' %
+                                     cmd)
+            elif parse_json:
+                return json.loads(out)
+            else:
+                return out
+
+    def run_cli(self, *cmd, **kwargs):
+        return self.openstack(['baremetal', 'introspection'] + list(cmd),
+                              **kwargs)
+
+
+class TestCLI(BaseCLITest):
+    def test_cli_negative(self):
+        err = self.run_cli('start', expect_error=True)
+        self.assertIn('too few arguments', err)
+        err = self.run_cli('status', expect_error=True)
+        self.assertIn('too few arguments', err)
+        err = self.run_cli('start', 'uuid', '--new-ipmi-username', 'user',
+                           expect_error=True)
+        self.assertIn('requires a new password', err)
+        err = self.run_cli('rule', 'show', 'uuid', expect_error=True)
+        self.assertIn('not found', err)
+        err = self.run_cli('rule', 'delete', 'uuid', expect_error=True)
+        self.assertIn('not found', err)
+
+    def test_introspect_get_status(self):
+        self.run_cli('start', self.uuid)
+        eventlet.greenthread.sleep(functional.DEFAULT_SLEEP)
+        self.cli.node.set_power_state.assert_called_once_with(self.uuid,
+                                                              'reboot')
+
+        status = self.run_cli('status', self.uuid, parse_json=True)
+        self.assertEqual({'finished': False, 'error': None}, status)
+
+        res = self.call_continue(self.data)
+        self.assertEqual({'uuid': self.uuid}, res)
+        eventlet.greenthread.sleep(functional.DEFAULT_SLEEP)
+
+        self.assertCalledWithPatch(self.patch, self.cli.node.update)
+        self.cli.port.create.assert_called_once_with(
+            node_uuid=self.uuid, address='11:22:33:44:55:66')
+
+        status = self.run_cli('status', self.uuid, parse_json=True)
+        self.assertEqual({'finished': True, 'error': None}, status)
+
+    def test_rules_api(self):
+        res = self.run_cli('rule', 'list', parse_json=True)
+        self.assertEqual([], res)
+
+        rule = {'conditions': [],
+                'actions': [{'action': 'fail', 'message': 'boom'}],
+                'description': 'Cool actions',
+                'uuid': self.uuid}
+        with tempfile.NamedTemporaryFile() as fp:
+            json.dump(rule, fp)
+            fp.flush()
+            res = self.run_cli('rule', 'import', fp.name, parse_json=True)
+
+        self.assertEqual([{'UUID': self.uuid, 'Description': 'Cool actions'}],
+                         res)
+
+        res = self.run_cli('rule', 'show', self.uuid, parse_json=True)
+        self.assertEqual(rule, res)
+
+        res = self.run_cli('rule', 'list', parse_json=True)
+        self.assertEqual([{'UUID': self.uuid,
+                           'Description': 'Cool actions'}],
+                         res)
+
+        self.run_cli('rule', 'delete', self.uuid)
+        res = self.run_cli('rule', 'list', parse_json=True)
+        self.assertEqual([], res)
+
+        with tempfile.NamedTemporaryFile() as fp:
+            rule.pop('uuid')
+            json.dump([rule, rule], fp)
+            fp.flush()
+            res = self.run_cli('rule', 'import', fp.name, parse_json=True)
+
+        self.run_cli('rule', 'purge')
+        res = self.run_cli('rule', 'list', parse_json=True)
+        self.assertEqual([], res)
+
+
 if __name__ == '__main__':
     with functional.mocked_server():
-        unittest.main()
+        unittest.main(verbosity=2)

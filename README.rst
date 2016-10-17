@@ -41,7 +41,7 @@ Starting with version 2.1.0 **Ironic Inspector** supports optional API
 versioning. Version is a tuple (X, Y), where X is always 1 for now.
 
 The server has maximum and minimum supported versions. If no version is
-requested, the server assumes (1, 0).
+requested, the server assumes the maximum it's supported.
 
 Two constants are exposed for convenience:
 
@@ -226,29 +226,6 @@ Deleting a rule
 CLI::
 
     $ openstack baremetal introspection rule delete <UUID>
-
-Shortcut Functions
-~~~~~~~~~~~~~~~~~~
-
-The following functions are available for simplified access to the most common
-functionality:
-
-* Starting introspection::
-
-    ironic_inspector_client.introspect(uuid[, new_ipmi_password[, new_ipmi_username]][, base_url][, api_version] **)
-
-* Getting introspection status::
-
-    ironic_inspector_client.get_status(uuid[, base_url][, api_version] **)
-
-* Getting API versions supported by a server::
-
-    ironic_inspector_client.server_api_versions([base_url] **)
-
-Here ``base_url`` argument is the same as ``inspector_url`` argument
-to the ``ClientV1`` constructor. Keyword arguments are passed to the client
-constructor intact. The first 2 functions also accept deprecated ``auth_token``
-argument, which should not be used.
 
 Using names instead of UUID
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~

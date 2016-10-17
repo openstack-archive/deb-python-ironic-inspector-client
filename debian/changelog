@@ -1,3 +1,10 @@
+python-ironic-inspector-client (1.9.0-1) unstable; urgency=medium
+
+  * New upstream release (Closes: #841126).
+  * Fixed (build-)depends for this release.
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 17 Oct 2016 22:38:44 +0200
+
 python-ironic-inspector-client (1.7.0-2) unstable; urgency=medium
 
   [ Ondřej Nový ]
