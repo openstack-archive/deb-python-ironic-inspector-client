@@ -1,0 +1,9 @@
+Code-Review+2: Anton Arefiev <aarefiev@mirantis.com>
+Workflow+1: Sam Betts <sam@code-smash.net>
+Code-Review+2: Sam Betts <sam@code-smash.net>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Fri, 20 Jan 2017 14:34:54 +0000
+Reviewed-on: https://review.openstack.org/422788
+Project: openstack/deb-python-ironic-inspector-client
+Branch: refs/heads/master
